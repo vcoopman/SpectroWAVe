@@ -7,11 +7,11 @@ TARGET    := build/executable
 SRC_DIR   := ./src
 SRC       := $(SRC_DIR)/*
 
-all:  
+all:
 	$(CXX) $(OPTIONS) $(LDFLAGS) $(INC) $(LIBS) $(SRC) -o $(TARGET)
 
 exec:
-	./build/executable $(FILE) $(BINNING) | tee ./build/out.txt
+	./build/executable $(FILE) $(BINNING) | tee ./build/out.log
 
 clean:
 	rm -f ./build/*
