@@ -16,7 +16,7 @@ class DisplayWindow {
    */
 
   public:
-    DisplayWindow(FileSignalCollector* collector);
+    DisplayWindow(std::string filepath, int sampleRate, int channels, int frames, int fftSize, int binning);
     ~DisplayWindow();
 
     /**
@@ -36,17 +36,14 @@ class DisplayWindow {
     void startMusic();
 
   private:
-    // Used to retrieve information about the signal.
-    FileSignalCollector* collector_;
-
     const int SCREEN_WIDTH = 1600;
-    const int SCREEN_HEIGHT = 800;
+    const int SCREEN_HEIGHT = 400;
 
     SDL_Window* window_ = NULL;
     SDL_Renderer* renderer_ = NULL;
 
     TTF_Font* font_;
-    const int FONT_SIZE = 24;
+    const int FONT_SIZE = 18;
 
     /** Background colors */
     const int BG_RED = 35;
@@ -62,6 +59,28 @@ class DisplayWindow {
     // Values used to computer the final bar color in the bars graph. See setBarColor(...) method.
     const int BARS_COLOR_CHANGE_OVERFLOW_VALUE = 5;
     const int BARS_BASE_COLOR_CHANGE_VALUE = 3;
+
+    /** InfoBox colors */
+    const int INFO_BOX_BG_RED = 0;
+    const int INFO_BOX_BG_GREEN = 0;
+    const int INFO_BOX_BG_BLUE = 0;
+    const int INFO_BOX_BG_ALPHA = 0;
+    const int INFO_BOX_BORDER_RED = 255;
+    const int INFO_BOX_BORDER_GREEN = 255;
+    const int INFO_BOX_BORDER_BLUE = 255;
+    const int INFO_BOX_BORDER_ALPHA = 255;
+    const Uint8 INFO_BOX_TEXT_RED = 255;
+    const Uint8 INFO_BOX_TEXT_GREEN = 255;
+    const Uint8 INFO_BOX_TEXT_BLUE = 255;
+    const Uint8 INFO_BOX_TEXT_ALPHA = 255;
+
+    /** Information about the signal being displayed */
+    std::string filepath_;
+    int sampleRate_;
+    int channels_;
+    int frames_;
+    int fftSize_;
+    int binning_;
 
     /**
      * Cleans window's draws using the background color.
@@ -82,7 +101,7 @@ class DisplayWindow {
     /**
      * Draws text at the specific position using font_.
      */
-    void drawText(const std::string& text, int xPosition, int yPosition);
+    void drawText(const std::string& text, int xPosition, int yPosition, SDL_Color textColor);
 
     /**
      * Draws box with information about the tool and the file being played.

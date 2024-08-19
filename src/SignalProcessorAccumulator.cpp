@@ -14,6 +14,8 @@ SignalProcessorAccumulator::SignalProcessorAccumulator(SignalCollector* collecto
   };
 
   fftOutputSize_ = (fftInputSize_ / 2) + 1; // real-to-complex FFT follows Hermitian simetry.
+  std::cout << "DEBUG fftOutputSize_: " << fftOutputSize_ << std::endl; 
+
   timeAverageSpectralMagnitudeCache_ = std::vector<float>(fftOutputSize_);
   expectedIterations_ = collector_->getSignalFrames() / fftInputSize;
   iterationCounter_ = 0;

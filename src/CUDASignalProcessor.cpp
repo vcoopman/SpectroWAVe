@@ -7,7 +7,7 @@ CUDASignalProcessor::~CUDASignalProcessor() {};
 
 std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, int fftOutputSize, int iterationCount) {
 
-    // TODO: Remove Debug
+    // TODO: Remove Debug lines
     //std::cout << "getSpectraMagnitudes" << std::endl;
     //std::cout << "fftInputSize: " << fftInputSize << std::endl;
     //std::cout << "fftOutputSize: " << fftOutputSize << std::endl;
@@ -22,7 +22,7 @@ std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, i
 
     std::vector<cufftComplex> output(fftOutputSize);
 
-    // TODO: Remove Debug
+    // TODO: Remove Debug lines
     //std::cout << "Input vector size:" << input.size() << std::endl;
     //std::cout << "Output vector size:" << output.size() << std::endl;
 
@@ -48,7 +48,7 @@ std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, i
         result[i] = magnitude;
     }
 
-    // TODO: Remove Debug
+    // TODO: Remove Debug lines
     //std::cout << "Input vector size:" << input.size() << std::endl;
     //std::cout << "Output vector size:" << output.size() << std::endl;
     //std::cout << "Result vector size:" << result.size() << std::endl;

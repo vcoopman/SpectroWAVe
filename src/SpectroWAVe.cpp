@@ -10,7 +10,15 @@ SpectroWAVe::SpectroWAVe(std::string filepath, int fftInputSize, int binning) {
   std::cout << "Iterations expected duration: " << iterationExpectedDuration_ms_ << " ms." << std::endl;
 
   accumulator_ = new SignalProcessorAccumulator(collector_, fftInputSize, binning);
-  display_ = new DisplayWindow(collector_);
+
+  display_ = new DisplayWindow(
+    collector_->getFilepath(),
+    collector_->getSignalSampleRate(),
+    collector_->getSignalChannels(),
+    collector_->getSignalFrames(),
+    fftInputSize,
+    binning
+  );
 };
 
 SpectroWAVe::~SpectroWAVe() {

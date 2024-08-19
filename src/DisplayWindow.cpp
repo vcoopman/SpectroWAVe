@@ -1,11 +1,13 @@
 #include "DisplayWindow.h"
 
-DisplayWindow::DisplayWindow(FileSignalCollector* collector) :
-  collector_(collector)
+DisplayWindow::DisplayWindow(std::string filepath, int sampleRate, int channels, int frames, int fftSize, int binning) :
+  filepath_(filepath),
+  sampleRate_(sampleRate),
+  channels_(channels),
+  frames_(frames),
+  fftSize_(fftSize),
+  binning_(binning)
 {
-  if (!collector_->isLoaded())
-    throw std::runtime_error("Collector must be loaded");
-
   if (SDL_Init( SDL_INIT_VIDEO ) < 0)
     throw std::runtime_error("SDL could not initialize! SDL_Error: " + std::string(SDL_GetError())); 
 
@@ -50,7 +52,7 @@ DisplayWindow::DisplayWindow(FileSignalCollector* collector) :
   if (SDL_Init(SDL_INIT_AUDIO) < 0)
     throw std::runtime_error("Failed to initialize SDL:" + std::string(SDL_GetError()));
 
-  if (Mix_OpenAudio(collector_->getSignalSampleRate(), MIX_DEFAULT_FORMAT, collector_->getSignalChannels(), 2048) < 0)
+  if (Mix_OpenAudio(sampleRate_, MIX_DEFAULT_FORMAT, channels_, 2048) < 0)
     throw std::runtime_error("Failed to initialize SDL_mixer: " + std::string(Mix_GetError()));
 
   Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
@@ -154,9 +156,7 @@ void DisplayWindow::drawBarsGraph(std::vector<float> data) {
   }
 }
 
-void DisplayWindow::drawText(const std::string& text, int xPosition, int yPosition) {
-  SDL_Color textColor = {255, 255, 255, 255};
-
+void DisplayWindow::drawText(const std::string& text, int xPosition, int yPosition, SDL_Color textColor) {
   SDL_Surface* textSurface = TTF_RenderText_Solid(font_, text.c_str(), textColor);
   if (!textSurface) {
     std::cerr << "Unable to render text surface! TTF_Error: " << TTF_GetError() << std::endl;
@@ -190,7 +190,13 @@ void DisplayWindow::drawInfoBox() {
     boxWidth,
     boxHigth
   };
-  SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+  SDL_SetRenderDrawColor(
+    renderer_,
+    INFO_BOX_BG_RED,
+    INFO_BOX_BG_GREEN,
+    INFO_BOX_BG_BLUE,
+    INFO_BOX_BG_ALPHA
+  );
   SDL_RenderFillRect(renderer_, &box);
 
   // Draw the border
@@ -200,21 +206,40 @@ void DisplayWindow::drawInfoBox() {
   border.y -= borderWidth / 2;
   border.w += borderWidth;
   border.h += borderWidth;
-  SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+  SDL_SetRenderDrawColor(
+    renderer_,
+    INFO_BOX_BORDER_RED,
+    INFO_BOX_BORDER_GREEN,
+    INFO_BOX_BORDER_BLUE,
+    INFO_BOX_BORDER_ALPHA
+  );
   SDL_RenderDrawRect(renderer_, &border);
 
-  drawText("Currently playing: ", boxXPosition, boxYPosition);
-  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 1));
-  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 2));
-  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 3));
-  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 4));
+  int textXPosition = boxXPosition + 1;
+  int textYPosition = boxYPosition + 1;
+  SDL_Color textColor = {
+    INFO_BOX_TEXT_RED,
+    INFO_BOX_TEXT_GREEN,
+    INFO_BOX_TEXT_BLUE,
+    INFO_BOX_TEXT_ALPHA
+  };
+  drawText(" SpectroWAVe ", textXPosition, textYPosition, textColor);
+  drawText("+--------------------------+", textXPosition, textYPosition + (FONT_SIZE * 1), textColor);
+
+  drawText("Currently playing: " + filepath_, textXPosition, textYPosition + (FONT_SIZE * 3), textColor);
+  drawText("Sampling Rate: " + std::to_string(sampleRate_) + " Hz", textXPosition, textYPosition + (FONT_SIZE * 4), textColor);
+  drawText("Channels: " + std::to_string(channels_), textXPosition, textYPosition + (FONT_SIZE * 5), textColor);
+  drawText("Frames (per channel): " + std::to_string(frames_), textXPosition, textYPosition + (FONT_SIZE * 6), textColor);
+
+  drawText("FFT Size: " + std::to_string(fftSize_), textXPosition, textYPosition + (FONT_SIZE * 8), textColor);
+  drawText("Frequency Resolution: " + std::to_string(sampleRate_ / fftSize_) + " Hz", textXPosition, textYPosition + (FONT_SIZE * 9), textColor);
+  drawText("Binning: " + std::to_string(binning_) + " channels", textXPosition, textYPosition + (FONT_SIZE * 10), textColor);
+
 }
 
 void DisplayWindow::startMusic() {
-  std::string filepath = collector_->getFilepath();
-
-  std::cout << "Starting audio file at: " << filepath.c_str() << std::endl;
-  Mix_Music* music = Mix_LoadMUS(filepath.c_str());
+  std::cout << "Starting audio file at: " << filepath_.c_str() << std::endl;
+  Mix_Music* music = Mix_LoadMUS(filepath_.c_str());
   if (!music) {
     std::cerr << "Failed to load sound file: " << Mix_GetError() << std::endl;
     return;
