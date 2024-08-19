@@ -2,12 +2,13 @@
 
 #include "WAVFileSignalCollector.h"
 
+
 SpectroWAVe::SpectroWAVe(std::string filepath, int fftInputSize, int binning) {
   collector_ = new WAVFileSignalCollector(filepath);
   collector_->load();
 
   iterationExpectedDuration_ms_ = (fftInputSize / static_cast<float>(collector_->getSignalSampleRate())) * 1000;
-  std::cout << "Iterations expected duration: " << iterationExpectedDuration_ms_ << " ms." << std::endl;
+  std::cout << "DEBUG Iterations expected duration: " << iterationExpectedDuration_ms_ << " ms." << std::endl;
 
   accumulator_ = new SignalProcessorAccumulator(collector_, fftInputSize, binning);
 
@@ -21,18 +22,19 @@ SpectroWAVe::SpectroWAVe(std::string filepath, int fftInputSize, int binning) {
   );
 };
 
+
 SpectroWAVe::~SpectroWAVe() {
   free(collector_);
   free(accumulator_);
   free(display_);
 };
 
+
 void SpectroWAVe::run() {
   std::cout << "Entering main loop" << std::endl;
 
   int iterationCounter = 1;
   while (accumulator_->getRemainingIterations() > 0) {
-
     iterationStart_ = std::chrono::high_resolution_clock::now();
     {
       if (iterationCounter == 1) display_->startMusic();
@@ -49,6 +51,7 @@ void SpectroWAVe::run() {
     ++iterationCounter;
   }
 };
+
 
 void SpectroWAVe::sleepRemainingIterationTime(int iterationCounter) {
   // Calculate the remaining time to sleep

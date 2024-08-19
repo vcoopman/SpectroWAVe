@@ -1,5 +1,6 @@
 #include "DisplayWindow.h"
 
+
 DisplayWindow::DisplayWindow(std::string filepath, int sampleRate, int channels, int frames, int fftSize, int binning) :
   filepath_(filepath),
   sampleRate_(sampleRate),
@@ -61,9 +62,17 @@ DisplayWindow::DisplayWindow(std::string filepath, int sampleRate, int channels,
   SDL_RenderPresent(renderer_);
 }
 
+
 DisplayWindow::~DisplayWindow() {
-  // TODO
-};
+  SDL_DestroyRenderer(renderer_);
+  SDL_DestroyWindow(window_);
+  TTF_CloseFont(font_);
+  Mix_CloseAudio();
+  Mix_Quit();
+  TTF_Quit();
+  SDL_Quit();
+}
+
 
 void DisplayWindow::checkEvent() {
   SDL_Event e;
@@ -71,12 +80,14 @@ void DisplayWindow::checkEvent() {
   if (e.type == SDL_QUIT) exit(0);
 }
 
+
 void DisplayWindow::display(std::vector<float> data) {
   cleanWindowDraws();
-  drawInfoBox();
   drawBarsGraph(data);
+  drawInfoBox();
   SDL_RenderPresent(renderer_);
 }
+
 
 void DisplayWindow::cleanWindowDraws() {
   SDL_SetRenderDrawColor(
@@ -88,6 +99,7 @@ void DisplayWindow::cleanWindowDraws() {
   );
   SDL_RenderClear(renderer_);
 }
+
 
 void DisplayWindow::setBarColor(float dataPoint, int dataSize) {
   int overflowTimes = static_cast<int>(dataPoint / BARS_COLOR_CHANGE_OVERFLOW_VALUE);
@@ -133,6 +145,7 @@ void DisplayWindow::setBarColor(float dataPoint, int dataSize) {
   );
 }
 
+
 void DisplayWindow::drawBarsGraph(std::vector<float> data) {
   int gap = 1;
   int xOffset = 5;
@@ -156,6 +169,7 @@ void DisplayWindow::drawBarsGraph(std::vector<float> data) {
   }
 }
 
+
 void DisplayWindow::drawText(const std::string& text, int xPosition, int yPosition, SDL_Color textColor) {
   SDL_Surface* textSurface = TTF_RenderText_Solid(font_, text.c_str(), textColor);
   if (!textSurface) {
@@ -176,6 +190,7 @@ void DisplayWindow::drawText(const std::string& text, int xPosition, int yPositi
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);
 }
+
 
 void DisplayWindow::drawInfoBox() {
   int boxWidth = 500;
@@ -234,11 +249,12 @@ void DisplayWindow::drawInfoBox() {
   drawText("FFT Size: " + std::to_string(fftSize_), textXPosition, textYPosition + (FONT_SIZE * 8), textColor);
   drawText("Frequency Resolution: " + std::to_string(sampleRate_ / fftSize_) + " Hz", textXPosition, textYPosition + (FONT_SIZE * 9), textColor);
   drawText("Binning: " + std::to_string(binning_) + " channels", textXPosition, textYPosition + (FONT_SIZE * 10), textColor);
-
 }
 
+
 void DisplayWindow::startMusic() {
-  std::cout << "Starting audio file at: " << filepath_.c_str() << std::endl;
+  std::cout << "Playing audio file at: " << filepath_.c_str() << std::endl;
+
   Mix_Music* music = Mix_LoadMUS(filepath_.c_str());
   if (!music) {
     std::cerr << "Failed to load sound file: " << Mix_GetError() << std::endl;
@@ -249,5 +265,4 @@ void DisplayWindow::startMusic() {
     std::cerr << "Failed to play music: " << Mix_GetError() << std::endl;
     return;
   }
-
 }

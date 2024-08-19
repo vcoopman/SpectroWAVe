@@ -1,12 +1,16 @@
+#include <cassert>
+
 #include "SignalProcessorAccumulator.h"
 #include "CUDASignalProcessor.h"
+#include "CUDAHelper.h"
+
 
 SignalProcessorAccumulator::SignalProcessorAccumulator(SignalCollector* collector, int fftInputSize, int binning) :
   collector_(collector),
   binning_(binning),
   fftInputSize_(fftInputSize) 
 {
-  // Create processors, one per channel.
+  // Create signal processors, one per channel.
   std::vector<std::vector<float>> signals = collector_->getAllAvailableChannelsSignal();
   for (auto signal: signals) {
     SignalProcessor* processor = new CUDASignalProcessor(signal);
@@ -21,6 +25,7 @@ SignalProcessorAccumulator::SignalProcessorAccumulator(SignalCollector* collecto
   iterationCounter_ = 0;
 }
 
+
 SignalProcessorAccumulator::~SignalProcessorAccumulator() {
   for (auto processor : processors_)
     free(processor);
@@ -33,11 +38,13 @@ void SignalProcessorAccumulator::updateTimeAverageSpectraMagnitudesCache() {
 
   std::vector<float> iterationAccumulatedSpectraMagnitudes(fftOutputSize_, 0);
   for (auto processor : processors_) {
-    std::vector<float> spectraMagnitudes = processor->getSpectraMagnitudes(fftInputSize_, fftOutputSize_, iterationCounter_);
-    // This could be a CUDA kernel. 
-    // But for the moment iteration times are so low that CUDA optimization is unneeded. 
-    for (int i = 0; i < this->fftOutputSize_ ; ++i)
-      iterationAccumulatedSpectraMagnitudes[i] += spectraMagnitudes[i];
+    std::vector<float> spectraMagnitudes = \
+      processor->getSpectraMagnitudes(fftInputSize_, fftOutputSize_, iterationCounter_);
+
+    CUDAHelper::addArraysInPlace(
+      iterationAccumulatedSpectraMagnitudes.data(),
+      spectraMagnitudes.data(),
+      fftOutputSize_);
   }
 
   /**
@@ -60,19 +67,19 @@ void SignalProcessorAccumulator::updateTimeAverageSpectraMagnitudesCache() {
    *
    */
 
-  // This could be a CUDA kernel too.
-  // But for the moment iteration times are so low that CUDA optimization is unneeded. 
+  // Implementation of B).
+  // This could be a CUDA kernel too. But for the moment iteration times are low enougth that CUDA optimization is unneeded. 
   for (int i = 0; i < fftOutputSize_ ; ++i) {
     timeAverageSpectralMagnitudeCache_[i] = \
-      (iterationAccumulatedSpectraMagnitudes[i] + 
        // Multipliying the cache value for the iterationCounter_ is a naive way
        // to deal with constant averaging error. 
-        (timeAverageSpectralMagnitudeCache_[i] * iterationCounter_))
+      (iterationAccumulatedSpectraMagnitudes[i] + (timeAverageSpectralMagnitudeCache_[i] * iterationCounter_))
           / (iterationCounter_ + 1);
   } 
 
   iterationCounter_ += 1;
 }
+
 
 std::vector<float> SignalProcessorAccumulator::getBinnedTimeAverageSpectraMagnitudes() {
   updateTimeAverageSpectraMagnitudesCache();
@@ -80,7 +87,7 @@ std::vector<float> SignalProcessorAccumulator::getBinnedTimeAverageSpectraMagnit
   std::vector<float> output(0);
   float accumulatedSum = 0.0;
   int counter = binning_;
-  for (auto magnitude : timeAverageSpectralMagnitudeCache_) { // TODO: Reminder channels are ignored.
+  for (auto magnitude : timeAverageSpectralMagnitudeCache_) {
     accumulatedSum += magnitude;
 
     --counter;
@@ -95,6 +102,7 @@ std::vector<float> SignalProcessorAccumulator::getBinnedTimeAverageSpectraMagnit
 
   return output;
 }
+
 
 int SignalProcessorAccumulator::getRemainingIterations() {
   return expectedIterations_ - iterationCounter_;

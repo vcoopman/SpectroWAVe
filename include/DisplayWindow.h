@@ -74,7 +74,7 @@ class DisplayWindow {
     const Uint8 INFO_BOX_TEXT_BLUE = 255;
     const Uint8 INFO_BOX_TEXT_ALPHA = 255;
 
-    /** Information about the signal being displayed */
+    /** Information about the signal being used */
     std::string filepath_;
     int sampleRate_;
     int channels_;

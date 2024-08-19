@@ -1,5 +1,6 @@
 #include "SpectroWAVe.h"
 
+
 int main(int argc, char* argv[]) {
 
   std::string filepath = argv[1]; 
@@ -34,4 +35,4 @@ int main(int argc, char* argv[]) {
   program->run();
 
   return 0;
-};
+}

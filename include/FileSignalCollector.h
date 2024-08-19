@@ -1,6 +1,9 @@
 #ifndef FILE_SIGNAL_COLLECTOR_H
 #define FILE_SIGNAL_COLLECTOR_H
 
+#include <string>
+#include <iostream>
+
 #include "SignalCollector.h"
 
 class FileSignalCollector : public SignalCollector {
@@ -16,7 +19,6 @@ class FileSignalCollector : public SignalCollector {
 
   protected:
     std::string filepath_;
-
 };
 
 #endif

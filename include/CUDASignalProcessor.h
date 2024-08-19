@@ -10,6 +10,10 @@
 #include "SignalProcessor.h"
 
 class CUDASignalProcessor : public SignalProcessor {
+  /**
+   * CUDA Base implementation of a SignalProcessor.
+   */
+
   public:
     CUDASignalProcessor(std::vector<float> signal);
     ~CUDASignalProcessor();
@@ -20,7 +24,6 @@ class CUDASignalProcessor : public SignalProcessor {
     cufftReal* d_signal_;
     cufftComplex* d_signalSpectrum_;
     cufftHandle plan_;
-
 };
 
 #endif

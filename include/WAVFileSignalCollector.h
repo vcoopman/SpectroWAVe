@@ -8,7 +8,7 @@
 
 class WAVFileSignalCollector : public FileSignalCollector {
   /**
-   * Used to collect input signal from of an audio file in the WAVE format.
+   * Used to collect input signal from of an file in the WAV format.
    */
 
   public:
