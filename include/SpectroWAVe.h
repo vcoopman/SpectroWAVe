@@ -3,27 +3,33 @@
 #include <thread>
 #include <iostream>
 
-#include "AudioSignalCollector.h"
+#include "FileSignalCollector.h"
 #include "SignalProcessorAccumulator.h"
 #include "DisplayWindow.h"
 
 class SpectroWAVe {
+  /**
+   * TODO
+   */
+
   public:
-    SpectroWAVe();
+    SpectroWAVe(std::string filepath, int fftInputSize, int binning);
     ~SpectroWAVe();
 
-    void setUp(std::string filepath, int binning);
     void run();
-    void cleanUp();
 
   private:
-    bool isSetup_;
-
+    FileSignalCollector* collector_;
     SignalProcessorAccumulator* accumulator_;
 
+    int iterationExpectedDuration_ms_;
     std::chrono::high_resolution_clock::time_point iterationStart_;
     std::chrono::high_resolution_clock::time_point iterationEnd_;
 
     DisplayWindow* display_;
 
+    /**
+     * Used to sleep the remaining time (after spectral processing) of the iteration.
+     */
+    void sleepRemainingIterationTime(int iterationCounter);
 };

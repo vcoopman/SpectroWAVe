@@ -1,14 +1,19 @@
 #include "CUDASignalProcessor.h"
 
-CUDASignalProcessor::CUDASignalProcessor(std::vector<float> signal) : SignalProcessor(signal) {};
+CUDASignalProcessor::CUDASignalProcessor(std::vector<float> signal) :
+    SignalProcessor(signal) {};
+
 CUDASignalProcessor::~CUDASignalProcessor() {};
 
 std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, int fftOutputSize, int iterationCount) {
+
+    // TODO: Remove Debug
     //std::cout << "getSpectraMagnitudes" << std::endl;
     //std::cout << "fftInputSize: " << fftInputSize << std::endl;
     //std::cout << "fftOutputSize: " << fftOutputSize << std::endl;
     //std::cout << "iterationCount: " << iterationCount << std::endl;
 
+    // Calculate the appropiated segment of the signal to process this iteration.
     std::vector<float> input(fftInputSize);
     auto iterationLowerBound = signal_.begin() + (iterationCount * fftInputSize);
     auto iterationUpperBound = iterationLowerBound + fftInputSize;
@@ -17,7 +22,7 @@ std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, i
 
     std::vector<cufftComplex> output(fftOutputSize);
 
-    // TODO: Debug
+    // TODO: Remove Debug
     //std::cout << "Input vector size:" << input.size() << std::endl;
     //std::cout << "Output vector size:" << output.size() << std::endl;
 
@@ -43,7 +48,7 @@ std::vector<float> CUDASignalProcessor::getSpectraMagnitudes(int fftInputSize, i
         result[i] = magnitude;
     }
 
-    // TODO: Debug
+    // TODO: Remove Debug
     //std::cout << "Input vector size:" << input.size() << std::endl;
     //std::cout << "Output vector size:" << output.size() << std::endl;
     //std::cout << "Result vector size:" << result.size() << std::endl;

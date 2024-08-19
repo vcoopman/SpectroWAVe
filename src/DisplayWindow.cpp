@@ -1,11 +1,16 @@
 #include "DisplayWindow.h"
 
-DisplayWindow::DisplayWindow() {
+DisplayWindow::DisplayWindow(FileSignalCollector* collector) :
+  collector_(collector)
+{
+  if (!collector_->isLoaded())
+    throw std::runtime_error("Collector must be loaded");
+
   if (SDL_Init( SDL_INIT_VIDEO ) < 0)
     throw std::runtime_error("SDL could not initialize! SDL_Error: " + std::string(SDL_GetError())); 
 
   window_ = SDL_CreateWindow(
-    "SpectroWAVe",
+    "~SpectroWAVe 🌈⃤",
     SDL_WINDOWPOS_UNDEFINED,
     SDL_WINDOWPOS_UNDEFINED,
     SCREEN_WIDTH,
@@ -16,7 +21,9 @@ DisplayWindow::DisplayWindow() {
   if(window_ == NULL)
     throw std::runtime_error("Window could not be created! SDL_Error: " + std::string(SDL_GetError())); 
 
-  // Disable specific events
+  // Disable specific events.
+  // This is done to reduce the amount of events produced by SDL
+  // and avoid looping through unwanted events.
   SDL_EventState(SDL_MOUSEMOTION, SDL_IGNORE);
   SDL_EventState(SDL_MOUSEBUTTONDOWN, SDL_IGNORE);
   SDL_EventState(SDL_MOUSEBUTTONUP, SDL_IGNORE);
@@ -40,6 +47,14 @@ DisplayWindow::DisplayWindow() {
   if (!font_)
     throw std::runtime_error("Failed to load font! TTF_Error: " + std::string(TTF_GetError()));
 
+  if (SDL_Init(SDL_INIT_AUDIO) < 0)
+    throw std::runtime_error("Failed to initialize SDL:" + std::string(SDL_GetError()));
+
+  if (Mix_OpenAudio(collector_->getSignalSampleRate(), MIX_DEFAULT_FORMAT, collector_->getSignalChannels(), 2048) < 0)
+    throw std::runtime_error("Failed to initialize SDL_mixer: " + std::string(Mix_GetError()));
+
+  Mix_VolumeMusic(MIX_MAX_VOLUME / 2);
+
   cleanWindowDraws();
   SDL_RenderPresent(renderer_);
 }
@@ -50,29 +65,36 @@ DisplayWindow::~DisplayWindow() {
 
 void DisplayWindow::checkEvent() {
   SDL_Event e;
-  if(SDL_PollEvent(&e) != 0) {
-    if (e.type == SDL_QUIT) exit(0);
-  }
+  if(SDL_PollEvent(&e) == 0) return;
+  if (e.type == SDL_QUIT) exit(0);
 }
 
 void DisplayWindow::display(std::vector<float> data) {
   cleanWindowDraws();
+  drawInfoBox();
   drawBarsGraph(data);
   SDL_RenderPresent(renderer_);
 }
 
 void DisplayWindow::cleanWindowDraws() {
-  SDL_SetRenderDrawColor(renderer_, 35, 38, 39, 255);
+  SDL_SetRenderDrawColor(
+    renderer_,
+    BG_RED,
+    BG_GREEN,
+    BG_BLUE,
+    BG_ALPHA
+  );
   SDL_RenderClear(renderer_);
 }
 
 void DisplayWindow::setBarColor(float dataPoint, int dataSize) {
-  int overflowTimes = static_cast<int>(dataPoint / COLOR_CHANGE_OVERFLOW_VALUE);
+  int overflowTimes = static_cast<int>(dataPoint / BARS_COLOR_CHANGE_OVERFLOW_VALUE);
 
-  int red = BASE_RED;
-  int green = BASE_GREEN;
-  int blue = BASE_BLUE;
-  int colorChange = BASE_COLOR_CHANGE_VALUE;
+  int red = BARS_BASE_RED;
+  int green = BARS_BASE_GREEN;
+  int blue = BARS_BASE_BLUE;
+  int colorChange = BARS_BASE_COLOR_CHANGE_VALUE;
+
   while (overflowTimes > 0) {
     --overflowTimes;
 
@@ -90,12 +112,14 @@ void DisplayWindow::setBarColor(float dataPoint, int dataSize) {
       green = 0;
     }
 
-    if ((blue - colorChange) > 0) {
-      blue -= colorChange;
+    if ((blue + colorChange) < 255) {
+      blue += colorChange;
       continue;
     } else {
-      blue = 0;
+      blue = 255;
     }
+
+    break; // All colors reached their target max.
   }
 
   SDL_SetRenderDrawColor(
@@ -103,7 +127,7 @@ void DisplayWindow::setBarColor(float dataPoint, int dataSize) {
     red,
     green,
     blue,
-    BASE_ALPHA
+    BARS_BASE_ALPHA
   );
 }
 
@@ -131,7 +155,7 @@ void DisplayWindow::drawBarsGraph(std::vector<float> data) {
 }
 
 void DisplayWindow::drawText(const std::string& text, int xPosition, int yPosition) {
-  SDL_Color textColor = {255, 255, 255, 255}; // White color
+  SDL_Color textColor = {255, 255, 255, 255};
 
   SDL_Surface* textSurface = TTF_RenderText_Solid(font_, text.c_str(), textColor);
   if (!textSurface) {
@@ -151,4 +175,54 @@ void DisplayWindow::drawText(const std::string& text, int xPosition, int yPositi
 
   SDL_DestroyTexture(textTexture);
   SDL_FreeSurface(textSurface);
+}
+
+void DisplayWindow::drawInfoBox() {
+  int boxWidth = 500;
+  int boxHigth = 200;
+  int boxXPosition = SCREEN_WIDTH - boxWidth - 10;
+  int boxYPosition = 10; 
+
+  // Draw the main box
+  SDL_Rect box = {
+    boxXPosition,
+    boxYPosition,
+    boxWidth,
+    boxHigth
+  };
+  SDL_SetRenderDrawColor(renderer_, 0, 0, 0, 255);
+  SDL_RenderFillRect(renderer_, &box);
+
+  // Draw the border
+  SDL_Rect border = box;
+  int borderWidth = 3;
+  border.x -= borderWidth / 2;
+  border.y -= borderWidth / 2;
+  border.w += borderWidth;
+  border.h += borderWidth;
+  SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
+  SDL_RenderDrawRect(renderer_, &border);
+
+  drawText("Currently playing: ", boxXPosition, boxYPosition);
+  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 1));
+  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 2));
+  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 3));
+  drawText("Currently playing: ", boxXPosition, boxYPosition + (FONT_SIZE * 4));
+}
+
+void DisplayWindow::startMusic() {
+  std::string filepath = collector_->getFilepath();
+
+  std::cout << "Starting audio file at: " << filepath.c_str() << std::endl;
+  Mix_Music* music = Mix_LoadMUS(filepath.c_str());
+  if (!music) {
+    std::cerr << "Failed to load sound file: " << Mix_GetError() << std::endl;
+    return;
+  }
+
+  if (Mix_PlayMusic(music, 1) == -1) {
+    std::cerr << "Failed to play music: " << Mix_GetError() << std::endl;
+    return;
+  }
+
 }

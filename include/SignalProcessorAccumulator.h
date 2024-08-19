@@ -9,30 +9,33 @@
 class SignalProcessorAccumulator {
 
   public:
-    SignalProcessorAccumulator(SignalCollector* collector, int binning);
+    SignalProcessorAccumulator(SignalCollector* collector, int fftInputSize, int binning);
     ~SignalProcessorAccumulator();
-
-    /**
-     * TODO
-     */
-    std::vector<float> getTimeAverageSpectra();
 
     /**
      * The process of binning the spectral data consists
      * on averaging a "binning" number of spectral channels together.
      */
-    std::vector<float> getBinnedTimeAverageSpectra();
+    std::vector<float> getBinnedTimeAverageSpectraMagnitudes();
+
+    int getRemainingIterations();
 
   private:
-    int binning_;
     int fftInputSize_;
     int fftOutputSize_;
-    int iterationCount_;
+    int expectedIterations_;
+    int iterationCounter_;
+    int binning_;
 
     SignalCollector* collector_;
-
     std::vector<SignalProcessor*> processors_;
+
     std::vector<float> timeAverageSpectralMagnitudeCache_;
+
+    /**
+     * Updates internal time average magnitudes cache. 
+     */
+    void updateTimeAverageSpectraMagnitudesCache();
 
 };
 

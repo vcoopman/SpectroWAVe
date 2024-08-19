@@ -2,27 +2,30 @@
 #define SIGNAL_COLLECTOR_H
 
 #include <vector>
+#include <string>
+#include <iostream>
 
 class SignalCollector {
   /**
-   * Interface for objects in charge of retriving the signal.
+   * Interface for objects in charge of collecting the signal.
    */
 
   public:
-    SignalCollector() = default; 
+    SignalCollector() {};
     virtual ~SignalCollector() {};
 
     virtual void load() = 0;
     virtual void unload() = 0;
-    bool isLoaded() { return loaded; }
+    bool isLoaded() { return loaded_; }
 
     virtual int getSignalChannels() = 0;
     virtual int getSignalSampleRate() = 0;
+    virtual int getSignalFrames() = 0;
 
     std::vector<std::vector<float>> getAllAvailableChannelsSignal() { return signals_; }
 
   protected:
-    bool loaded;
+    bool loaded_;
     std::vector<std::vector<float>> signals_;
 
 };
